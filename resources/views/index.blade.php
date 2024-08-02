@@ -130,6 +130,11 @@
             }
             if (params.has('search')) {
                 searchInput.value = params.get('search');
+                if (searchInput.value === '') {
+                    params.delete('search');
+                    url.search = params.toString();
+                    window.location.href = url.href;
+                }
             } else {
                 searchInput.value = '';
             }
@@ -140,11 +145,14 @@
             const url = new URL(window.location.href);
             const params = new URLSearchParams(url.search);
 
-            // Update the search parameter value in the URL
-            params.set('search', searchInput.value.trim());
+            // Update the search parameter if input value is not null
+            if (searchInput.value.trim() !== '') {
+                // Update the search parameter value in the URL
+                params.set('search', searchInput.value.trim());
 
-            url.search = params.toString();
-            window.location.href = url.href;
+                url.search = params.toString();
+                window.location.href = url.href;
+            }
         }
 
         // Add event listener to the search input for enter key press
