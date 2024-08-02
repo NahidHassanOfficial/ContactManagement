@@ -112,8 +112,8 @@
             window.location.href = url.href;
         }
 
-        // Function to update the select elements based on URL parameters
-        function updateSelectElements() {
+        // Function to update the form elements based on URL parameters
+        function updateFormElements() {
             const url = new URL(window.location.href);
             const params = new URLSearchParams(url.search);
 
@@ -128,6 +128,8 @@
             } else {
                 orderByDate.value = 'default';
             }
+
+            // Update the input box based on URL parameter
             if (params.has('search')) {
                 searchInput.value = params.get('search');
                 if (searchInput.value === '') {
@@ -169,7 +171,7 @@
 
         // Update the select elements on page load
         window.addEventListener('load', function() {
-            updateSelectElements();
+            updateFormElements();
         });
     </script>
 </x-layouts.home>
