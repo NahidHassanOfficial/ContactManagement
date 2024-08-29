@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ContactRequest;
 use App\Models\Contact;
+use Exception;
 use Illuminate\Http\Request;
 
 class ContactController extends Controller
@@ -13,26 +14,7 @@ class ContactController extends Controller
      */
     public function index(Request $request)
     {
-        $filteringOptions = $request->all();
-        $query = Contact::query();
-
-        if (isset($filteringOptions['name'])) {
-            $query->orderBy('name', $filteringOptions['name']);
-        }
-        if (isset($filteringOptions['date']) && in_array($filteringOptions['date'], ['asc', 'desc'])) {
-            $query->orderBy('created_at', $filteringOptions['date']);
-        }
-        if (isset($filteringOptions['search'])) {
-            $search = $filteringOptions['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('email', 'like', '%' . $search . '%');
-            });
-        }
-
-        $contacts = $query->get();
-
-        return view('index', compact('contacts'));
+        return view('index');
     }
 
     /**
@@ -48,9 +30,21 @@ class ContactController extends Controller
      */
     public function store(ContactRequest $request)
     {
-        $validatedRequest = $request->validated();
-        Contact::create($validatedRequest);
-        return redirect()->route('index');
+        try {
+            $validatedRequest = $request->validated();
+            if ($validatedRequest) {
+                Contact::create([
+                    'name' => $validatedRequest['name'],
+                    'email' => $validatedRequest['email'],
+                    'phone' => $validatedRequest['phone'],
+                    'address' => $validatedRequest['address'],
+                ]);
+                return response(['message' => 'Contact Created successfully'], 200);
+            }
+
+        } catch (Exception $e) {
+            return response(['message' => 'Error Creating Contact'], 500);
+        }
     }
 
     /**
@@ -60,34 +54,55 @@ class ContactController extends Controller
     {
         $contact = Contact::find($id);
         if ($contact) {
-            return view('components.show', compact('contact'));
+            return $contact;
         } else {
-            abort(404);
+            return response(['error' => 'Contact not found'], 404);
         }
     }
-
+    public function renderContact(Request $request)
+    {
+        $contact = (object) $request->all();
+        return view('components.show', compact('contact'))->render();
+    }
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
     {
-        $contact = Contact::find($id);
-        if ($contact) {
-            return view('components.edit', compact('contact'));
-        } else {
-            abort(404);
-        }
+
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(ContactRequest $request, string $id)
+    public function update(ContactRequest $request, $id)
     {
-        $validatedRequest = $request->validated();
-        $contact = Contact::find($id);
-        $contact->update($validatedRequest);
-        return redirect()->route('index');
+        try {
+            $validatedRequest = $request->validated();
+            if ($validatedRequest && $id) {
+                $contact = Contact::find($id);
+                if ($contact) {
+                    $contact->fill([
+                        'name' => $validatedRequest['name'],
+                        'email' => $validatedRequest['email'],
+                        'phone' => $validatedRequest['phone'],
+                        'address' => $validatedRequest['address'],
+                    ]);
+                    if ($contact->isDirty()) {
+                        $contact->save();
+                        return response(['message' => 'Contact updated successfully'], 200);
+                    } else {
+                        return response(['message' => 'No changes made'], 409);
+                    }
+                } else {
+                    return response(['error' => 'Contact not found'], 404);
+                }
+            } else {
+                return response(['error' => 'Contact not found'], 404);
+            }
+        } catch (Exception $e) {
+            return response(['error' => 'Contact not found'], 404);
+        }
     }
 
     /**
@@ -95,9 +110,12 @@ class ContactController extends Controller
      */
     public function destroy(string $id)
     {
-        if (!Contact::destroy($id)) {
-            return abort(404);
+        $contact = Contact::find($id);
+        if ($contact) {
+            $contact->delete();
+            return response(['status' => 'success'], 200);
+        } else {
+            return response(['error' => 'Contact not found'], 404);
         }
-        return redirect()->back();
     }
 }

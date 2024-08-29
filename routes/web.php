@@ -3,6 +3,10 @@
 use App\Http\Controllers\ContactController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', function () {
+    return redirect()->route('index');
+});
+
 Route::group(['prefix' => 'contacts'], function () {
     Route::get('/', [ContactController::class, 'index'])->name('index');
     Route::get('/create', [ContactController::class, 'create'])->name('create');
@@ -12,3 +16,5 @@ Route::group(['prefix' => 'contacts'], function () {
     Route::put('/{id}', [ContactController::class, 'update'])->name('update');
     Route::delete('/{id}', [ContactController::class, 'destroy'])->name('destroy');
 });
+
+Route::post('/render-card', [ContactController::class, 'renderContact']);
